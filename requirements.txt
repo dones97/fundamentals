@@ -1,0 +1,16 @@
+streamlit>=1.28.0
+PyPDF2>=3.0.0
+plotly>=5.17.0
+pandas>=2.1.0
+python-dotenv>=1.0.0
+requests>=2.31.0
+
+# LLM Providers (install the one you want to use)
+# For FREE options, install one of these:
+groq>=0.4.0              # FREE - Groq with Llama 3.1 (recommended for free tier)
+# For local FREE option (requires Ollama installed):
+# requests (already included above)
+
+# For paid options (optional):
+anthropic>=0.34.0        # Anthropic Claude (best quality)
+openai>=1.0.0           # OpenAI GPT-4
