@@ -22,7 +22,7 @@ if 'report_text' not in st.session_state:
 if 'analyses' not in st.session_state:
     st.session_state.analyses = {}
 if 'selected_provider' not in st.session_state:
-    st.session_state.selected_provider = "Groq (FREE - Llama 3.1)"
+    st.session_state.selected_provider = "Groq (FREE - Llama 3.3)"
 if 'llm_provider' not in st.session_state:
     st.session_state.llm_provider = None
 
