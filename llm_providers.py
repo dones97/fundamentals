@@ -45,11 +45,11 @@ class AnthropicProvider(LLMProvider):
         return message.content[0].text
 
 class GroqProvider(LLMProvider):
-    """Groq provider with free tier (Llama 3.1)"""
+    """Groq provider with free tier (Llama 3.3)"""
 
     def __init__(self, api_key: str):
         super().__init__()
-        self.provider_name = "Groq (Llama 3.1)"
+        self.provider_name = "Groq (Llama 3.3)"
         try:
             from groq import Groq
             self.client = Groq(api_key=api_key)
@@ -67,7 +67,7 @@ class GroqProvider(LLMProvider):
         truncated_context = context[:max_context]
 
         completion = self.client.chat.completions.create(
-            model="llama-3.1-70b-versatile",  # Free tier model
+            model="llama-3.3-70b-versatile",  # Current free tier model (updated from deprecated 3.1)
             messages=[
                 {
                     "role": "system",
@@ -173,12 +173,12 @@ class OpenAIProvider(LLMProvider):
 def get_available_providers() -> dict:
     """Get dictionary of available providers with their config"""
     return {
-        "Groq (FREE - Llama 3.1)": {
+        "Groq (FREE - Llama 3.3)": {
             "class": GroqProvider,
             "requires_key": True,
             "key_name": "GROQ_API_KEY",
             "signup_url": "https://console.groq.com",
-            "description": "Free tier available! Fast inference with Llama 3.1 70B",
+            "description": "Free tier available! Fast inference with Llama 3.3 70B",
             "cost": "FREE (limited rate)"
         },
         "Ollama (FREE - Local)": {
