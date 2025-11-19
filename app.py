@@ -5,6 +5,7 @@ import PyPDF2
 import io
 from visualizations import create_sample_sankey, display_sankey_with_data
 from llm_providers import get_available_providers, create_provider, get_api_key_from_env
+from web_research import WebResearchEnhancer, extract_company_name_from_report
 
 # Page configuration
 st.set_page_config(
@@ -25,6 +26,12 @@ if 'selected_provider' not in st.session_state:
     st.session_state.selected_provider = "Groq (FREE - Llama 3.3)"
 if 'llm_provider' not in st.session_state:
     st.session_state.llm_provider = None
+if 'company_name' not in st.session_state:
+    st.session_state.company_name = None
+if 'web_researcher' not in st.session_state:
+    st.session_state.web_researcher = None
+if 'use_web_research' not in st.session_state:
+    st.session_state.use_web_research = True
 
 def extract_text_from_pdf(pdf_file):
     """Extract text from uploaded PDF file"""
@@ -111,8 +118,28 @@ def main():
                 else:
                     with st.spinner("Extracting text from PDF..."):
                         st.session_state.report_text = extract_text_from_pdf(uploaded_file)
-                        st.session_state.analysis_complete = True
-                        st.success("✓ Report uploaded successfully!")
+
+                    with st.spinner("Identifying company..."):
+                        # Extract company name for web research
+                        company_name = extract_company_name_from_report(
+                            st.session_state.report_text,
+                            st.session_state.llm_provider
+                        )
+                        st.session_state.company_name = company_name
+                        st.session_state.web_researcher = WebResearchEnhancer(company_name)
+
+                    st.session_state.analysis_complete = True
+                    st.success(f"✓ Report uploaded: {st.session_state.company_name}")
+
+        st.divider()
+
+        # Web research toggle
+        if st.session_state.analysis_complete:
+            st.session_state.use_web_research = st.checkbox(
+                "🌐 Include Web Research",
+                value=st.session_state.use_web_research,
+                help="Supplement analysis with online research about the company, industry, and competitors"
+            )
 
         st.divider()
 
@@ -186,11 +213,25 @@ def display_section(section):
 
     if section == "Overview":
         st.header("Analysis Overview")
-        st.markdown("""
-        Your annual report has been uploaded successfully. Use the sidebar to navigate through
-        different sections of the fundamental analysis.
 
-        Each section will be generated on-demand using AI analysis of the uploaded report.
+        # Show company name
+        if st.session_state.company_name:
+            st.subheader(f"📋 Company: {st.session_state.company_name}")
+
+        # Show analysis mode
+        if st.session_state.use_web_research:
+            st.info("🌐 **Web Research Enabled** - Analysis will combine annual report data with online research about the company, industry, competitors, and recent news.")
+        else:
+            st.info("📄 **Annual Report Only** - Analysis based solely on the uploaded annual report.")
+
+        st.markdown("""
+        Use the sidebar to navigate through different sections of the fundamental analysis.
+
+        Each section will be generated on-demand using AI analysis.
+
+        **Data Sources:**
+        - Primary: Uploaded annual report
+        - Supplementary: Web search for company info, competitors, industry trends, and news (when enabled)
         """)
 
     elif section == "1. Quick Stats":
@@ -231,11 +272,22 @@ def get_analysis(section_key, prompt):
         st.error("⚠️ No AI provider connected. Please select and connect a provider in the sidebar.")
         return "AI provider not configured. Please connect to an AI provider in the sidebar to continue."
 
+    # Enhance prompt with web research if enabled
+    enhanced_prompt = prompt
+    if st.session_state.use_web_research and st.session_state.web_researcher:
+        with st.spinner(f"Gathering web research for {section_key}..."):
+            enhanced_prompt = st.session_state.web_researcher.enhance_prompt(prompt, section_key)
+
     # Get analysis from provider
-    with st.spinner(f"Analyzing {section_key} using {st.session_state.llm_provider.provider_name}..."):
+    spinner_text = f"Analyzing {section_key}"
+    if st.session_state.use_web_research:
+        spinner_text += " (with web research)"
+    spinner_text += f" using {st.session_state.llm_provider.provider_name}..."
+
+    with st.spinner(spinner_text):
         try:
             analysis = st.session_state.llm_provider.get_completion(
-                prompt=prompt,
+                prompt=enhanced_prompt,
                 context=st.session_state.report_text
             )
             # Cache the result
