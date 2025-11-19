@@ -4,7 +4,7 @@ from pathlib import Path
 import PyPDF2
 import io
 from visualizations import create_sample_sankey, display_sankey_with_data
-from llm_providers import get_available_providers, create_provider
+from llm_providers import get_available_providers, create_provider, get_api_key_from_env
 
 # Page configuration
 st.set_page_config(
